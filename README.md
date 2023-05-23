@@ -1,6 +1,6 @@
 # Furry site favorite scraper
 
-This is a simple script that scrapes your favorites from furry sites and stores them in a local FileSystem. Submission metadata is stored into the local MongoDB database.
+This is a simple script that scrapes your favorites from furry sites and stores them in a local FileSystem. Submission metadata is stored into the MongoDB database.
 
 ## Supported sites
 
@@ -9,7 +9,25 @@ This is a simple script that scrapes your favorites from furry sites and stores 
 
 ## Installation
 
-Before installing, make sure your local MongoDB server is running.
+Before installing, make sure your MongoDB server is running.
+
+### Using MongoDB Atlas
+
+Visit [https://www.mongodb.com/atlas/database](https://www.mongodb.com/atlas/database) and create your Database
+
+Copy connection string into the `config.toml` file. See `config.toml.example` for example.
+
+```toml
+[db]
+mongodb = "mongodb+srv://<username>:<password>@my-serverlessinst.e2esljd.mongodb.net/"
+dbname = "scrapbook"
+```
+
+![Database Deployments Cloud Atlas](./docs/Database%20Deployments%20Cloud%20MongoDB%20Cloud.png)
+
+### Initializing the database
+
+To create Index, run this command
 
 ```bash
 npm install
