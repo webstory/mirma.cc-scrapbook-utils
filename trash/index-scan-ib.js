@@ -1,9 +1,12 @@
 const fs = require('fs');
+const path = require('path');
 const glob = require('glob');
+const toml = require('toml');
 const moment = require('moment');
 
-const sourceDir = process.cwd() + '/res/ib';
-const outDir = process.cwd() + '/res/ib-meta';
+const config = toml.parse(fs.readFileSync('config.toml', 'utf8'));
+const sourceDir = config.ib.files;
+const outDir = config.ib.meta_files;
 
 const files = glob.sync(`${sourceDir}/**/index.json`);
 

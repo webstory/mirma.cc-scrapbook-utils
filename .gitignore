@@ -6,8 +6,10 @@ node_modules
 build
 
 .env*
+config.toml
+!*.example
 
 package-lock.json
 yarn.lock
 
-res
+res/*

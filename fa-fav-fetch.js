@@ -1,8 +1,4 @@
 const fs = require('fs');
-const path = require('path');
-const _ = require('lodash');
-
-const glob = require('glob');
 const moment = require('moment');
 const { MongoClient } = require('mongodb');
 const cheerio = require('cheerio');
@@ -11,11 +7,13 @@ const toml = require('toml');
 const md5 = require('md5');
 const { delay, download, detectImageTypeAndDimensions } = require('./commons');
 
-const dataDir = process.cwd() + '/res/fa';
-const mongoClient = new MongoClient('mongodb://localhost:27017', { useNewUrlParser: true, useUnifiedTopology: true });
+const config = toml.parse(fs.readFileSync('config.toml', 'utf8'));
 
-const config = toml.parse(fs.readFileSync('.env.toml', 'utf8')).fa;
+const dataDir = config.fa.files;
+const mongoClient = new MongoClient(config.db.mongodb, { useNewUrlParser: true, useUnifiedTopology: true });
+
 const FA = 'https://www.furaffinity.net';
+const Cookie = `a=${config.fa.cookie_a};b=${config.fa.cookie_b}; expires=Tue, 1-Jan-2999 03:14:07 GMT; Max-Age=2147483647; path=/; domain=.furaffinity.net; secure; HttpOnly`;
 
 async function getSubmission(submission_id) {
   const url = `${FA}/view/${submission_id}`;
@@ -27,7 +25,7 @@ async function getSubmission(submission_id) {
       sPage = await axios.get(url, {
         withCredentials: true,
         headers: {
-          Cookie: config.Cookie,
+          Cookie,
         },
       });
       break;
@@ -96,7 +94,7 @@ async function getSubmission(submission_id) {
 
 async function* fetchFavoriteSid() {
   let retry = 5;
-  let nextHref = '/favorites/' + config.username;
+  let nextHref = '/favorites/' + config.fa.username;
 
   while (retry > 0) {
     let fFav;
@@ -105,7 +103,7 @@ async function* fetchFavoriteSid() {
       fFav = await axios.get(FA + nextHref, {
         withcredentials: true,
         headers: {
-          Cookie: config.Cookie,
+          Cookie,
         },
       });
     } catch (e) {
@@ -143,7 +141,7 @@ async function* fetchFavoriteSid() {
 
 async function main() {
   await mongoClient.connect();
-  const db = mongoClient.db('scrapbook');
+  const db = mongoClient.db(config.db.dbname);
   const collection = db.collection('files');
 
   const lastDoc = await collection.findOne({ provider: 'furaffinity' }, { sort: { submission_id: -1 } });

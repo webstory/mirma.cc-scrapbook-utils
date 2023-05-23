@@ -5,13 +5,14 @@ const { MongoClient } = require('mongodb');
 const toml = require('toml');
 const axios = require('axios');
 const _ = require('lodash');
-const { delay, retryAxios, download } = require('./commons');
+const { retryAxios, download } = require('./commons');
 
-const dataDir = process.cwd() + '/res/ib';
-const mongoClient = new MongoClient('mongodb://localhost:27017', { useNewUrlParser: true, useUnifiedTopology: true });
+const config = toml.parse(fs.readFileSync('config.toml', 'utf8'));
+
+const dataDir = config.ib.files;
+const mongoClient = new MongoClient(config.db.mongodb, { useNewUrlParser: true, useUnifiedTopology: true });
 let db;
 
-const config = toml.parse(fs.readFileSync('.env.toml', 'utf8')).ib;
 const IB = 'https://inkbunny.net';
 
 async function getSubmission(token, submission_id) {
@@ -173,14 +174,14 @@ async function* fetchSubmissionList(token, searchParams) {
 
 async function main() {
   await mongoClient.connect();
-  db = mongoClient.db('scrapbook');
-  let maxDupCount = 100;
+  db = mongoClient.db(config.db.dbname);
+  let maxDupCount = 10;
 
   let res = await axios.get(IB + '/api_login.php', {
     headers: {},
     params: {
-      username: config.username,
-      password: config.password,
+      username: config.ib.username,
+      password: config.ib.password,
       output_mode: 'json',
     },
   });

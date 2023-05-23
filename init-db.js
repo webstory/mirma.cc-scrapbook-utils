@@ -1,9 +1,14 @@
+const fs = require('fs');
+const toml = require('toml');
+
+const config = toml.parse(fs.readFileSync('./config.toml', 'utf-8'));
+
 const { MongoClient } = require('mongodb');
-const mongoClient = new MongoClient('mongodb://localhost:27017', { useNewUrlParser: true, useUnifiedTopology: true });
+const mongoClient = new MongoClient(config.db.mongodb, { useNewUrlParser: true, useUnifiedTopology: true });
 
 (async () => {
   await mongoClient.connect();
-  const db = mongoClient.db('scrapbook');
+  const db = mongoClient.db(config.db.dbname);
 
   await db.collection('files').createIndex({ provider: 1, file_id: 1 }, { unique: true });
   await db.collection('files').createIndex({ tags: 1 });
@@ -25,4 +30,6 @@ const mongoClient = new MongoClient('mongodb://localhost:27017', { useNewUrlPars
   await db.collection('pools').createIndex({ provider: 1, name: 1 });
   await db.collection('pools').createIndex({ provider: 1, files: 1 });
   await db.collection('pools').createIndex({ provider: 1, pool_id: 1 }, { unique: true });
+
+  await mongoClient.close();
 })();

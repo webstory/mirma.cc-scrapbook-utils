@@ -1,7 +1,7 @@
 const fs = require('fs');
+const path = require('path');
 const glob = require('glob');
 const moment = require('moment');
-const _ = require('lodash');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const toml = require('toml');
@@ -10,11 +10,11 @@ const md5 = require('md5');
 const sharp = require('sharp');
 const { MongoClient } = require('mongodb');
 
-const config = toml.parse(fs.readFileSync('.env.toml', 'utf8'));
-const Cookie = config.fa.Cookie;
+const config = toml.parse(fs.readFileSync('config.toml', 'utf8'));
+const Cookie = `a=${config.fa.cookie_a};b=${config.fa.cookie_b}; expires=Tue, 1-Jan-2999 03:14:07 GMT; Max-Age=2147483647; path=/; domain=.furaffinity.net; secure; HttpOnly`;
 
 const sourceDir = process.cwd() + '/res/fa';
-const mongoClient = new MongoClient('mongodb://localhost:27017', { useNewUrlParser: true, useUnifiedTopology: true });
+const mongoClient = new MongoClient(config.db.mongodb, { useNewUrlParser: true, useUnifiedTopology: true });
 
 function delay(t) {
   return new Promise((done) => {
@@ -133,29 +133,7 @@ async function getSubmission(submission_id) {
 
 (async () => {
   await mongoClient.connect();
-  const db = mongoClient.db('scrapbook');
-
-  await db.collection('files').createIndex({ provider: 1, file_id: 1 }, { unique: true });
-  await db.collection('files').createIndex({ tags: 1 });
-  await db.collection('files').createIndex({ pools: 1 });
-  await db.collection('files').createIndex({ username: 1 });
-  await db.collection('files').createIndex({ user_id: 1 });
-  await db.collection('files').createIndex({ provider: 1, submission_id: 1 });
-  await db.collection('files').createIndex({ file_name: 1 });
-  await db.collection('files').createIndex({ md5: 1 });
-  await db.collection('files').createIndex({ create_timestamp: 1 });
-  await db
-    .collection('files')
-    .createIndex(
-      { title: 'text', description: 'text' },
-      { default_language: 'english' },
-      { weights: { title: 10, description: 1 } }
-    );
-
-  await db.collection('pools').createIndex({ provider: 1, name: 1 });
-  await db.collection('pools').createIndex({ provider: 1, files: 1 });
-  await db.collection('pools').createIndex({ provider: 1, pool_id: 1 }, { unique: true });
-
+  const db = mongoClient.db(config.db.dbname);
   const files = glob.sync(`${sourceDir}/**/index.json`);
   const totalFiles = files.length;
   let processed = 0;

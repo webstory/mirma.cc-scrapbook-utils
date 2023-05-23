@@ -1,0 +1,26 @@
+[db]
+mongodb = "mongodb://localhost:27017"
+dbname = "scrapbook"
+
+[s3]
+# region = "us-west-4"
+endpoint = "https://s3.us-west-004.backblazeb2.com"
+bucket = "your-bucket-name"
+prefix = "prefix/"
+
+[s3.credentials]
+accessKeyId = "S3 Access Key issued from IAM"
+secretAccessKey = "S3 Secret Key issued from IAM"
+
+[fa]
+username = "FA_username"
+cookie_a = "paste uuid for cookie a here"
+cookie_b = "paste uuid for cookie b here"
+files = "./res/fa"
+meta_files = "./res/fa-meta"
+
+[ib]
+username = "hoya82"
+password = 'pa$$word'
+files = "./res/ib"
+meta_files = "./res/ib-meta"

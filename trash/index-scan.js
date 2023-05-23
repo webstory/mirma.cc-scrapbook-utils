@@ -1,10 +1,15 @@
 const fs = require('fs');
+const path = require('path');
 const glob = require('glob');
-// const util = require('util');
-// const pipeline = util.promisify(require('stream').pipeline);
+const toml = require('toml');
 const moment = require('moment');
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('./res/ib/ib.db');
+
+const config = toml.parse(fs.readFileSync('config.toml', 'utf8'));
+const sourceDir = config.ib.files;
+const outDir = config.ib.meta_files;
+
+const db = new sqlite3.Database(path.join(outDir, 'ib.db'));
 
 db.serialize(() => {
   // Drop Tables
@@ -21,9 +26,6 @@ db.serialize(() => {
   db.run('DELETE FROM files');
   db.run('DELETE FROM pools');
 });
-
-const sourceDir = process.cwd() + '/res/ib';
-const outDir = process.cwd() + '/res/ib-meta';
 
 const files = glob.sync(`${sourceDir}/**/index.json`);
 
