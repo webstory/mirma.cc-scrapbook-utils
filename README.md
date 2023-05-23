@@ -1,4 +1,4 @@
-# Furry site favorite scrapper
+# Furry site favorite scraper
 
 This is a simple script that scrapes your favorites from furry sites and stores them in a local FileSystem. Submission metadata is stored into the local MongoDB database.
 
