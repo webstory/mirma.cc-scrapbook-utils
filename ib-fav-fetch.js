@@ -56,7 +56,7 @@ async function getSubmission(token, submission_id) {
 
   // Tags
   const tags = keywords.map((k) => k.keyword_name.replaceAll(' ', '_'));
-  tags.push(`artist:${username}`);
+  tags.push(`artist:${username.toLowerCase()}`);
   // Pools
   for (const pool of submission.pools) {
     const { pool_id, name, description } = pool;
