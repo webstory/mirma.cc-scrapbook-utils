@@ -26,7 +26,7 @@ const mongoClient = new MongoClient(config.db.mongodb, { useNewUrlParser: true, 
       const { submission_id, keywords, username, user_id, title, description } = data.submissions[key];
       // Tags
       const tags = keywords.map((k) => k.keyword_name.replaceAll(' ', '_'));
-      tags.push(`artist:${username}`);
+      tags.push(`artist:${username.toLowerCase()}`);
       // Pools
       for (const pool of data.submissions[key].pools) {
         const { pool_id, name, description } = pool;

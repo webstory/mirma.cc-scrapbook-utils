@@ -56,7 +56,7 @@ async function getSubmission(submission_id) {
     .map((_i, el) => $(el).text().toLowerCase().trim())
     .get();
   tags = tags.map((t) => t.replace(/\s/g, '_'));
-  tags.push(`artist:${author}`);
+  tags.push(`artist:${author.toLowerCase()}`);
 
   let create_datetime = $('div.submission-id-sub-container strong span.popup_date').attr('title');
   let filename;
