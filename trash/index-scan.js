@@ -6,8 +6,8 @@ const moment = require('moment');
 const sqlite3 = require('sqlite3').verbose();
 
 const config = toml.parse(fs.readFileSync('config.toml', 'utf8'));
-const sourceDir = config.ib.files;
-const outDir = config.ib.meta_files;
+const sourceDir = config.files.dir + 'inkbunny';
+const outDir = config.files.dir + 'inkbunny-meta';
 
 const db = new sqlite3.Database(path.join(outDir, 'ib.db'));
 

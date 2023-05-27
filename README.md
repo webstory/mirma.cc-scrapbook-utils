@@ -19,7 +19,7 @@ Copy connection string into the `config.toml` file. See `config.toml.example` fo
 
 ```toml
 [db]
-mongodb = "mongodb+srv://<username>:<password>@my-serverlessinst.e2esljd.mongodb.net/"
+mongodb = "mongodb+srv://<username>:<password>@my-serverlessinst.mongodb.net/"
 dbname = "scrapbook"
 ```
 
@@ -36,15 +36,24 @@ node init-db.js
 
 ## Usage
 
+### Common
+
+1. Create a file named `config.toml` in the root directory of this project.
+2. Copy the contents of `config.toml.example` into `config.toml`.
+3. Edit `[db]` section of `config.toml`
+   - `mongodb`: Your MongoDB connection string
+   - `dbname`: Your MongoDB database name
+4. Edit `[files]` section of `config.toml`
+   - `dir`: The root directory to store your files
+
 ### Inkbunny
 
 #### Configuration
 
-1. Create a file named `config.toml` in the root directory of this project.
-2. Copy the contents of `config.toml.example` into `config.toml`.
-3. Edit `[ib]` section of `config.toml`
-   - `username`: Your IB username
-   - `password`: Your IB password
+Edit `[ib]` section of `config.toml`
+
+- `username`: Your IB username
+- `password`: Your IB password
 
 ### Running
 
@@ -56,19 +65,28 @@ node ib-fav-fetch.js
 
 #### Configuration
 
-1. Create a file named `config.toml` in the root directory of this project.
-2. Copy the contents of `config.toml.example` into `config.toml`.
-3. Edit `[fa]` section of `config.toml`
-   - `username`: Your FA username
-   - `cookie`: Your FA cookie
-     - You can get this by logging into FA, opening the developer tools, and copying the value of the `a` and `b` cookie.
-     - ![FA cookie](./docs/cookie-capture.png)
+Edit `[fa]` section of `config.toml`
+
+- `username`: Your FA username
+- `cookie`: Your FA cookie
+  - You can get this by logging into FA, opening the developer tools, and copying the value of the `a` and `b` cookie.
+  - ![FA cookie](./docs/cookie-capture.png)
 
 #### Running
 
 ```bash
 node fa-fav-fetch.js
 ```
+
+### Bulk create thumbnails
+
+You can create missing thumbnails by running this command
+
+```bash
+node create-thumbnail.js
+```
+
+You do not have to run this command separatly. Thumbnail creation process is already embedded into the fetcher.
 
 ## License
 

@@ -5,7 +5,7 @@ const moment = require('moment');
 const { MongoClient } = require('mongodb');
 
 const config = toml.parse(fs.readFileSync('config.toml', 'utf8'));
-const sourceDir = config.ib.files;
+const sourceDir = config.files.dir + 'inkbunny';
 const mongoClient = new MongoClient(config.db.mongodb, { useNewUrlParser: true, useUnifiedTopology: true });
 
 (async () => {

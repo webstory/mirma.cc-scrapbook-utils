@@ -5,8 +5,8 @@ const toml = require('toml');
 const moment = require('moment');
 
 const config = toml.parse(fs.readFileSync('config.toml', 'utf8'));
-const sourceDir = config.ib.files;
-const outDir = config.ib.meta_files;
+const sourceDir = config.files.dir + 'inkbunny';
+const outDir = config.files.dir + 'inkbunny-meta';
 
 const files = glob.sync(`${sourceDir}/**/index.json`);
 
