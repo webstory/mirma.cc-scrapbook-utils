@@ -16,11 +16,10 @@ secretAccessKey = "S3 Secret Key issued from IAM"
 username = "FA_username"
 cookie_a = "paste uuid for cookie a here"
 cookie_b = "paste uuid for cookie b here"
-files = "../res/furaffinity"
-meta_files = "../res/furaffinity-meta"
 
 [ib]
 username = "hoya82"
 password = 'pa$$word'
-files = "../res/inkbunny"
-meta_files = "../res/inkbunny-meta"
+
+[files]
+dir = "../res"

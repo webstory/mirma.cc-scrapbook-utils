@@ -5,11 +5,12 @@ const cheerio = require('cheerio');
 const axios = require('axios');
 const toml = require('toml');
 const md5 = require('md5');
-const { delay, download, detectImageTypeAndDimensions } = require('./commons');
+const { delay, download, detectImageTypeAndDimensions, createThumbnail } = require('./commons');
 
 const config = toml.parse(fs.readFileSync('config.toml', 'utf8'));
 
-const dataDir = config.fa.files;
+const dataDir = config.files.dir + 'furaffinity';
+const thumbnailDir = config.files.dir + 'furaffinity-thumbnails';
 const mongoClient = new MongoClient(config.db.mongodb, { useNewUrlParser: true, useUnifiedTopology: true });
 
 const FA = 'https://www.furaffinity.net';
@@ -170,6 +171,15 @@ async function main() {
     } else {
       dupCount = maxDupCount;
       await download(meta.full_url, destPath, { Cookie: config.Cookie });
+      try {
+        let thumbnailPath = `${thumbnailDir}/${meta.username}`;
+        if (!fs.existsSync(thumbnailPath)) {
+          fs.mkdirSync(thumbnailPath);
+        }
+        await createThumbnail(destPath, `${thumbnailPath}/${meta.file_name}`);
+      } catch (e) {
+        console.error(e);
+      }
     }
 
     const file = fs.readFileSync(destPath);

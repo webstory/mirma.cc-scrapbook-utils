@@ -1,8 +1,12 @@
 const fs = require('fs');
+const path = require('path');
 const _ = require('lodash');
 const axios = require('axios');
 const FileType = require('file-type-cjs');
+const mime = require('mime/lite');
 const imageSize = require('image-size');
+const sharp = require('sharp');
+const ffmpeg = require('fluent-ffmpeg');
 
 function delay(t) {
   return new Promise((done) => {
@@ -98,9 +102,67 @@ function retryAxios(tryCount, timeInterval, axiosOptions) {
   return instance;
 }
 
+async function createImageThumbnail(inputPath, outputPath) {
+  if (fs.existsSync(outputPath)) {
+    console.log('Thumbnail already exists, skipping');
+    return;
+  }
+
+  try {
+    if (!fs.existsSync(path.dirname(outputPath))) {
+      fs.mkdirSync(path.dirname(outputPath));
+    }
+    const img = sharp(inputPath);
+    const resizedImg = img.resize({ width: 120, height: 120, fit: sharp.fit.insize, withoutEnlargement: true });
+    await resizedImg.toFile(outputPath);
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function createVideoThumbnail(inputPath, outputPath) {
+  // Override thumbnail extension to png
+  outputPath = outputPath.replace(/\.[^/.]+$/, '.png');
+
+  if (fs.existsSync(outputPath)) {
+    console.log('Thumbnail already exists, skipping');
+    return;
+  }
+
+  try {
+    return new Promise((resolve, reject) => {
+      ffmpeg(inputPath)
+        .on('end', resolve)
+        .on('error', reject)
+        .screenshots({
+          timestamps: ['50%'],
+          filename: path.basename(outputPath),
+          folder: path.dirname(outputPath),
+          size: '120x120',
+        });
+    });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function createThumbnail(inputPath, outputPath) {
+  const mimeType = mime.getType(inputPath) || 'application/octet-stream';
+  if (mimeType.startsWith('image/')) {
+    return createImageThumbnail(inputPath, outputPath);
+  } else if (mimeType.startsWith('video/')) {
+    return createVideoThumbnail(inputPath, outputPath);
+  } else {
+    throw new Error(`Cannot determine mimetype`);
+  }
+}
+
 module.exports = {
   delay,
   download,
   detectImageTypeAndDimensions,
   retryAxios,
+  createImageThumbnail,
+  createVideoThumbnail,
+  createThumbnail,
 };

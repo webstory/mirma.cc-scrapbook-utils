@@ -5,11 +5,12 @@ const { MongoClient } = require('mongodb');
 const toml = require('toml');
 const axios = require('axios');
 const _ = require('lodash');
-const { retryAxios, download } = require('./commons');
+const { retryAxios, download, createThumbnail } = require('./commons');
 
 const config = toml.parse(fs.readFileSync('config.toml', 'utf8'));
 
-const dataDir = config.ib.files;
+const dataDir = config.files.dir + 'inkbunny';
+const thumbnailDir = config.files.dir + 'inkbunny-thumbnails';
 const mongoClient = new MongoClient(config.db.mongodb, { useNewUrlParser: true, useUnifiedTopology: true });
 let db;
 
@@ -104,7 +105,19 @@ async function getSubmission(token, submission_id) {
       if (!fs.existsSync(path.join(dataDir, username))) {
         fs.mkdirSync(path.join(dataDir, username));
       }
-      await download(encodeURI(file.file_url_full), path.join(dataDir, username, file_name), {});
+      const destPath = path.join(dataDir, username, file_name);
+      await download(encodeURI(file.file_url_full), destPath, {});
+
+      try {
+        if (!fs.existsSync(path.join(thumbnailDir, username))) {
+          fs.mkdirSync(path.join(thumbnailDir, username));
+        }
+        const thumbnailPath = path.join(thumbnailDir, username, file_name);
+        await createThumbnail(destPath, thumbnailPath);
+      } catch (e) {
+        console.error(e);
+      }
+
       operations_files.push({
         updateOne: {
           filter: { provider: 'inkbunny', file_id: metadata.file_id },
@@ -209,6 +222,8 @@ async function main() {
       } else if (res === 304) {
         console.log('File Already Exists');
       }
+    } else {
+      dupCount = maxDupCount;
     }
   }
 
