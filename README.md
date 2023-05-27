@@ -2,6 +2,8 @@
 
 This is a simple script that scrapes your favorites from furry sites and stores them in a local FileSystem. Submission metadata is stored into the MongoDB database.
 
+See also [Furry site favorite browser](https://github.com/webstory/mirma.cc-scrapbook-client) and [Furry site favorite server](https://github.com/webstory/mirma.cc-scrapbook-server) for a web-based viewer.
+
 ## Supported sites
 
 - [x] Inkbunny
