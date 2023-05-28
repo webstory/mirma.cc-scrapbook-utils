@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const moment = require('moment');
 const { MongoClient } = require('mongodb');
 const cheerio = require('cheerio');
@@ -9,8 +10,8 @@ const { delay, download, detectImageTypeAndDimensions, createThumbnail } = requi
 
 const config = toml.parse(fs.readFileSync('config.toml', 'utf8'));
 
-const dataDir = config.files.dir + 'furaffinity';
-const thumbnailDir = config.files.dir + 'furaffinity-thumbnails';
+const dataDir = path.join(config.files.dir, 'furaffinity');
+const thumbnailDir = path.join(config.files.dir, 'furaffinity-thumbnails');
 const mongoClient = new MongoClient(config.db.mongodb, { useNewUrlParser: true, useUnifiedTopology: true });
 
 const FA = 'https://www.furaffinity.net';
