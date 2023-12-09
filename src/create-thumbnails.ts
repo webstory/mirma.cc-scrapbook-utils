@@ -1,8 +1,7 @@
-const fs = require('fs');
-const path = require('path');
-const { glob } = require('glob');
-const toml = require('toml');
-const { createThumbnail } = require('./commons');
+import fs from 'fs';
+import { glob } from 'glob';
+import toml from 'toml';
+import { createThumbnail } from './common';
 
 const config = toml.parse(fs.readFileSync('config.toml', 'utf8'));
 
@@ -15,7 +14,7 @@ async function main() {
     };
   });
 
-  for (param of params) {
+  for (const param of params) {
     if (!fs.existsSync(param.outputDir)) {
       fs.mkdirSync(param.outputDir);
     }

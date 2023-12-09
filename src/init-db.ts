@@ -1,12 +1,12 @@
-const fs = require('fs');
-const toml = require('toml');
+import fs from 'fs';
+import toml from 'toml';
+import { MongoClient } from 'mongodb';
 
 const config = toml.parse(fs.readFileSync('./config.toml', 'utf-8'));
 
-const { MongoClient } = require('mongodb');
-const mongoClient = new MongoClient(config.db.mongodb, { useNewUrlParser: true, useUnifiedTopology: true });
+const mongoClient = new MongoClient(config.db.mongodb);
 
-(async () => {
+async function main() {
   await mongoClient.connect();
   const db = mongoClient.db(config.db.dbname);
 
@@ -23,8 +23,10 @@ const mongoClient = new MongoClient(config.db.mongodb, { useNewUrlParser: true, 
     .collection('files')
     .createIndex(
       { title: 'text', description: 'text' },
-      { default_language: 'english' },
-      { weights: { title: 10, description: 1 } }
+      {
+        default_language: 'english',
+        weights: { title: 10, description: 1 },
+      }
     );
 
   await db.collection('pools').createIndex({ provider: 1, name: 1 });
@@ -32,4 +34,6 @@ const mongoClient = new MongoClient(config.db.mongodb, { useNewUrlParser: true, 
   await db.collection('pools').createIndex({ provider: 1, pool_id: 1 }, { unique: true });
 
   await mongoClient.close();
-})();
+}
+
+main();
