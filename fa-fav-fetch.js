@@ -12,7 +12,7 @@ const config = toml.parse(fs.readFileSync('config.toml', 'utf8'));
 
 const dataDir = path.join(config.files.dir, 'furaffinity');
 const thumbnailDir = path.join(config.files.dir, 'furaffinity-thumbnails');
-const mongoClient = new MongoClient(config.db.mongodb, { useNewUrlParser: true, useUnifiedTopology: true });
+const mongoClient = new MongoClient(config.db.mongodb);
 
 const FA = 'https://www.furaffinity.net';
 const Cookie = `a=${config.fa.cookie_a};b=${config.fa.cookie_b}; expires=Tue, 1-Jan-2999 03:14:07 GMT; Max-Age=2147483647; path=/; domain=.furaffinity.net; secure; HttpOnly`;

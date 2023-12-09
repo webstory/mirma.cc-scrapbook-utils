@@ -9,7 +9,7 @@
   "author": "Hoya Kim",
   "license": "MIT",
   "dependencies": {
-    "axios": "^1.4.0",
+    "axios": "^1.6.2",
     "cheerio": "^1.0.0-rc.12",
     "file-type": "^18.4.0",
     "file-type-cjs": "^1.0.7",
@@ -20,7 +20,7 @@
     "md5": "^2.3.0",
     "mime": "^3.0.0",
     "moment": "^2.29.4",
-    "mongodb": "^5.5.0",
+    "mongodb": "^6.3.0",
     "sharp": "^0.32.1",
     "sqlite3": "^5.1.6",
     "toml": "^3.0.0"

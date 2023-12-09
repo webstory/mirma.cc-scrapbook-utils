@@ -11,7 +11,7 @@ const config = toml.parse(fs.readFileSync('config.toml', 'utf8'));
 
 const dataDir = path.join(config.files.dir, 'inkbunny');
 const thumbnailDir = path.join(config.files.dir, 'inkbunny-thumbnails');
-const mongoClient = new MongoClient(config.db.mongodb, { useNewUrlParser: true, useUnifiedTopology: true });
+const mongoClient = new MongoClient(config.db.mongodb);
 let db;
 
 const IB = 'https://inkbunny.net';
