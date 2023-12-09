@@ -1,4 +1,4 @@
-// replace all require to import
+import 'core-js/actual';
 import fs from 'fs';
 import path from 'path';
 import moment from 'moment';
