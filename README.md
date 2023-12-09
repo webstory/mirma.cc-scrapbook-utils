@@ -33,7 +33,7 @@ To create Index, run this command
 
 ```bash
 npm install
-node init-db.js
+npm run init
 ```
 
 ## Usage
@@ -60,7 +60,7 @@ Edit `[ib]` section of `config.toml`
 ### Running
 
 ```bash
-node ib-fav-fetch.js
+npm run ib
 ```
 
 ### FurAffinity
@@ -77,7 +77,7 @@ Edit `[fa]` section of `config.toml`
 #### Running
 
 ```bash
-node fa-fav-fetch.js
+npm run fa
 ```
 
 ### Bulk create thumbnails
@@ -85,10 +85,14 @@ node fa-fav-fetch.js
 You can create missing thumbnails by running this command
 
 ```bash
-node create-thumbnail.js
+npm run create-thumbnails
 ```
 
 You do not have to run this command separatly. Thumbnail creation process is already embedded into the fetcher.
+
+## Change log
+- 2023-12-09: v3.0.0
+  - Migrated to TypeScript
 
 ## License
 

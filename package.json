@@ -1,31 +1,39 @@
 {
   "name": "mirma.cc-scrapbook-utils",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "3.0.0",
+  "description": "Furry site favorite scraper",
+  "main": "index.ts",
+  "engine": "node > 18",
   "scripts": {
+    "build": "tsc",
+    "init": "ts-node src/init-db.ts",
+    "ib": "ts-node src/ib-fav-fetch.ts",
+    "fa": "ts-node src/fa-fav-fetch.ts",
+    "create-thumbnails": "ts-node src/create-thumbnails.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Hoya Kim",
   "license": "MIT",
   "dependencies": {
-    "axios": "^1.6.2",
     "cheerio": "^1.0.0-rc.12",
-    "file-type": "^18.4.0",
-    "file-type-cjs": "^1.0.7",
+    "core-js": "^3.34.0",
+    "file-type": "^18.7.0",
     "fluent-ffmpeg": "^2.1.2",
     "glob": "^10.2.5",
     "image-size": "^1.0.2",
-    "lodash": "^4.17.21",
     "md5": "^2.3.0",
     "mime": "^3.0.0",
     "moment": "^2.29.4",
     "mongodb": "^6.3.0",
-    "sharp": "^0.32.1",
-    "sqlite3": "^5.1.6",
-    "toml": "^3.0.0"
+    "sharp": "^0.33.0",
+    "toml": "^3.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
   },
   "devDependencies": {
-    "prettier": "^2.8.8"
+    "@types/fluent-ffmpeg": "^2.1.24",
+    "@types/md5": "^2.3.5",
+    "@types/mime": "^3.0.4",
+    "prettier": "^3.1.0"
   }
 }

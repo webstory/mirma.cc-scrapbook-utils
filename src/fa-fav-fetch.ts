@@ -1,12 +1,12 @@
-const fs = require('fs');
-const path = require('path');
-const moment = require('moment');
-const { MongoClient } = require('mongodb');
-const cheerio = require('cheerio');
-const axios = require('axios');
-const toml = require('toml');
-const md5 = require('md5');
-const { delay, download, detectImageTypeAndDimensions, createThumbnail } = require('./commons');
+import 'core-js/actual';
+import fs from 'fs';
+import path from 'path';
+import moment from 'moment';
+import { MongoClient } from 'mongodb';
+import toml from 'toml';
+import md5 from 'md5';
+import { load as loadHTML } from 'cheerio';
+import { delay, Downloader, detectImageTypeAndDimensions, createThumbnail } from './common';
 
 const config = toml.parse(fs.readFileSync('config.toml', 'utf8'));
 
@@ -17,15 +17,15 @@ const mongoClient = new MongoClient(config.db.mongodb);
 const FA = 'https://www.furaffinity.net';
 const Cookie = `a=${config.fa.cookie_a};b=${config.fa.cookie_b}; expires=Tue, 1-Jan-2999 03:14:07 GMT; Max-Age=2147483647; path=/; domain=.furaffinity.net; secure; HttpOnly`;
 
-async function getSubmission(submission_id) {
+async function getSubmission(submission_id: string | number) {
   const url = `${FA}/view/${submission_id}`;
   let retry = 5;
   let metadata = null;
   let sPage;
   while (retry > 0) {
     try {
-      sPage = await axios.get(url, {
-        withCredentials: true,
+      sPage = await fetch(url, {
+        credentials: 'include',
         headers: {
           Cookie,
         },
@@ -38,7 +38,11 @@ async function getSubmission(submission_id) {
     }
   }
 
-  let $ = cheerio.load(sPage.data);
+  if (!sPage) {
+    return null;
+  }
+
+  let $ = loadHTML(await sPage.text());
 
   let author = $('.submission-id-sub-container a strong').text();
   let image = $('#submissionImg').attr('data-fullview-src');
@@ -69,6 +73,10 @@ async function getSubmission(submission_id) {
     console.error(e);
   }
 
+  if (!filename) {
+    return null;
+  }
+
   description = description.split('\n').slice(3).join('\n').trim();
 
   try {
@@ -94,7 +102,7 @@ async function getSubmission(submission_id) {
   }
 }
 
-async function* fetchFavoriteSid() {
+async function* fetchFavoriteSid(): AsyncGenerator<string> {
   let retry = 5;
   let nextHref = '/favorites/' + config.fa.username;
 
@@ -102,8 +110,8 @@ async function* fetchFavoriteSid() {
     let fFav;
 
     try {
-      fFav = await axios.get(FA + nextHref, {
-        withcredentials: true,
+      fFav = await fetch(FA + nextHref, {
+        credentials: 'include',
         headers: {
           Cookie,
         },
@@ -116,22 +124,22 @@ async function* fetchFavoriteSid() {
 
     retry = 5;
 
-    let $ = cheerio.load(fFav.data);
+    let $ = loadHTML(await fFav.text());
 
     let favList = $('section#gallery-favorites figure').get();
 
     for (let e of favList) {
       let sidUrl = $(e).find('a:first-child').attr('href');
-      let m = /\/view\/([0-9]+)\//.exec(sidUrl);
+      let m = /\/view\/([0-9]+)\//.exec(sidUrl!) || [];
 
       if (m.length > 1) {
-        const sid = m[1];
+        const sid = m[1] as string;
 
         yield sid;
       }
     }
 
-    let _nextHref = $('.pagination a.button.right').attr('href');
+    let _nextHref: string = $('.pagination a.button.right').attr('href') || '';
 
     if (/\/favorites\/[^\/]+\/[0-9]+\/next/.test(_nextHref) && nextHref != _nextHref) {
       nextHref = _nextHref;
@@ -147,6 +155,9 @@ async function main() {
   const collection = db.collection('files');
 
   const lastDoc = await collection.findOne({ provider: 'furaffinity' }, { sort: { submission_id: -1 } });
+  if (!lastDoc) {
+    throw new Error('No last submission');
+  }
   let lastSubmissionId = lastDoc.submission_id;
 
   console.log(`Fetch until ${lastSubmissionId}`);
@@ -159,7 +170,11 @@ async function main() {
       break;
     }
     await delay(1000);
-    const meta = await getSubmission(submissionId);
+    const meta = await getSubmission(submissionId) as any;
+
+    if (!meta) {
+      continue;
+    }
 
     let destPath = `${dataDir}/${meta.username}`;
     if (!fs.existsSync(destPath)) {
@@ -169,9 +184,15 @@ async function main() {
     if (fs.existsSync(destPath)) {
       console.log('File already exists');
       dupCount--;
+      continue;
     } else {
       dupCount = maxDupCount;
-      await download(meta.full_url, destPath, { Cookie: config.Cookie });
+      const downloader = new Downloader();
+      let full_url = meta.full_url;
+      if (!full_url.startsWith('http')) {
+        full_url = "https://" + full_url.replace(/^\/\//, '');
+      }
+      await downloader.download(full_url, destPath, { headers: { Cookie: config.Cookie } });
       try {
         let thumbnailPath = `${thumbnailDir}/${meta.username}`;
         if (!fs.existsSync(thumbnailPath)) {
@@ -187,9 +208,11 @@ async function main() {
     const hash = md5(file);
 
     let imageMeta = await detectImageTypeAndDimensions(destPath);
-    meta.width = imageMeta.width;
-    meta.height = imageMeta.height;
-    meta.mimetype = imageMeta.mime;
+    if (imageMeta) {
+      meta.width = imageMeta.width;
+      meta.height = imageMeta.height;
+      meta.mimetype = imageMeta.mime;
+    }
     meta.md5 = hash;
 
     console.log(meta);

@@ -1,45 +1,65 @@
-const fs = require('fs');
-const path = require('path');
-const moment = require('moment');
-const { MongoClient } = require('mongodb');
-const toml = require('toml');
-const axios = require('axios');
-const _ = require('lodash');
-const { retryAxios, download, createThumbnail } = require('./commons');
+// replace all require to import
+import fs from 'fs';
+import path from 'path';
+import moment from 'moment';
+import { MongoClient } from 'mongodb';
+import type { AnyBulkWriteOperation, Db } from 'mongodb';
+import toml from 'toml';
+
+import { retryFetch, Downloader, createThumbnail } from './common';
 
 const config = toml.parse(fs.readFileSync('config.toml', 'utf8'));
 
 const dataDir = path.join(config.files.dir, 'inkbunny');
 const thumbnailDir = path.join(config.files.dir, 'inkbunny-thumbnails');
 const mongoClient = new MongoClient(config.db.mongodb);
-let db;
+let db: Db;
 
 const IB = 'https://inkbunny.net';
 
-async function getSubmission(token, submission_id) {
+interface IBCredentialToken {
+  sid: string;
+  user_id?: string;
+}
+
+interface PoolDocument {
+  provider: string;
+  pool_id: number;
+  name: string;
+  description: string;
+  files: number[];
+}
+
+async function getSubmission(token: IBCredentialToken, submission_id: string | number) {
   const { sid } = token;
   let res;
 
   try {
-    res = await retryAxios(10, 5000).get(IB + '/api_submissions.php', {
-      headers: {},
-      params: {
-        sid: sid,
-        submission_ids: submission_id,
-        output_mode: 'json',
-        sort_keywords_by: 'alphabetical',
-        show_description: 'yes',
-        show_description_bbcode_parsed: 'no',
-        show_writing: 'yes',
-        show_writing_bbcode_parsed: 'no',
-        show_pools: 'yes',
-      },
+    res = await retryFetch(IB + '/api_submissions.php', {
+      tryCount: 10, retryAfter: 5000, fetchOptions: {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        params: {
+          sid: sid,
+          submission_ids: submission_id,
+          output_mode: 'json',
+          sort_keywords_by: 'alphabetical',
+          show_description: 'yes',
+          show_description_bbcode_parsed: 'no',
+          show_writing: 'yes',
+          show_writing_bbcode_parsed: 'no',
+          show_pools: 'yes',
+        },
+      }
     });
   } catch (e) {
     return false;
   }
 
-  let submission = _.get(res.data, 'submissions[0]', null);
+  const jsonBody = await res.json();
+
+  let submission = jsonBody?.submissions?.[0];
 
   if (!submission) {
     return 404;
@@ -52,11 +72,11 @@ async function getSubmission(token, submission_id) {
     return 304;
   }
 
-  const operations_pools = [];
+  const operations_pools: AnyBulkWriteOperation<PoolDocument>[] = [];
   const operations_files = [];
 
   // Tags
-  const tags = keywords.map((k) => k.keyword_name.replaceAll(' ', '_'));
+  const tags = keywords.map((k: any) => k.keyword_name.replaceAll(' ', '_'));
   tags.push(`artist:${username.toLowerCase()}`);
   // Pools
   for (const pool of submission.pools) {
@@ -64,14 +84,11 @@ async function getSubmission(token, submission_id) {
     operations_pools.push({
       updateOne: {
         filter: { provider: 'inkbunny', pool_id: Number(pool_id) },
-        update: { $set: { provider: 'inkbunny', pool_id: Number(pool_id), name, description } },
+        update: {
+          $set: { provider: 'inkbunny', pool_id: Number(pool_id), name, description },
+          $addToSet: { files: Number(submission_id) },
+        },
         upsert: true,
-      },
-    });
-    operations_pools.push({
-      updateOne: {
-        filter: { provider: 'inkbunny', pool_id: Number(pool_id) },
-        update: { $addToSet: { files: Number(submission_id) } },
       },
     });
   }
@@ -96,17 +113,18 @@ async function getSubmission(token, submission_id) {
       create_timestamp: moment.utc(create_datetime).valueOf(),
       create_datetime,
       tags,
-      pools: submission.pools.map((p) => p.pool_id),
+      pools: submission.pools.map((p: any) => p.pool_id),
     };
 
     console.log(metadata);
 
     try {
+      const downloader = new Downloader();
       if (!fs.existsSync(path.join(dataDir, username))) {
         fs.mkdirSync(path.join(dataDir, username));
       }
       const destPath = path.join(dataDir, username, file_name);
-      await download(encodeURI(file.file_url_full), destPath, {});
+      await downloader.download(encodeURI(file.file_url_full), destPath, {});
 
       try {
         if (!fs.existsSync(path.join(thumbnailDir, username))) {
@@ -130,13 +148,13 @@ async function getSubmission(token, submission_id) {
     }
   }
 
-  if (operations_pools.length > 0) await db.collection('pools').bulkWrite(operations_pools);
+  if (operations_pools.length > 0) await db.collection<PoolDocument>('pools').bulkWrite(operations_pools);
   if (operations_files.length > 0) await db.collection('files').bulkWrite(operations_files);
 
   return 200;
 }
 
-async function* fetchSubmissionList(token, searchParams) {
+async function* fetchSubmissionList(token: IBCredentialToken, searchParams: any) {
   const { sid } = token;
   let res;
 
@@ -148,16 +166,19 @@ async function* fetchSubmissionList(token, searchParams) {
   };
 
   // Fetch the first page(mode 1)
-  res = await retryAxios(3, 1000).get(IB + '/api_search.php', {
-    headers: {},
-    params: {
-      ...defaultSearchParams,
-      ...searchParams,
-      get_rid: 'yes',
-    },
+  res = await retryFetch(IB + '/api_search.php', {
+    tryCount: 3, retryAfter: 1000, fetchOptions: {
+      headers: {},
+      params: {
+        ...defaultSearchParams,
+        ...searchParams,
+        get_rid: 'yes',
+      },
+    }
   });
 
-  let { rid, page, pages_count, results_count_all, submissions } = res.data;
+  const data = await res.json();
+  let { rid, page, pages_count, results_count_all, submissions } = data;
 
   console.log({ pages_count, results_count_all });
 
@@ -169,16 +190,18 @@ async function* fetchSubmissionList(token, searchParams) {
     page++;
 
     // Countinuous search(mode 2)
-    res = await retryAxios(3, 1000).get(IB + '/api_search.php', {
-      headers: {},
-      params: {
-        ...defaultSearchParams,
-        rid: rid,
-        page: page,
-      },
+    res = await retryFetch(IB + '/api_search.php', {
+      tryCount: 3, retryAfter: 1000, fetchOptions: {
+        headers: {},
+        params: {
+          ...defaultSearchParams,
+          rid: rid,
+          page: page,
+        },
+      }
     });
 
-    let { submissions } = res.data;
+    let { submissions } = await res.json();
     for (const submission of submissions) {
       yield submission.submission_id;
     }
@@ -190,16 +213,18 @@ async function main() {
   db = mongoClient.db(config.db.dbname);
   let maxDupCount = 10;
 
-  let res = await axios.get(IB + '/api_login.php', {
-    headers: {},
-    params: {
-      username: config.ib.username,
-      password: config.ib.password,
-      output_mode: 'json',
-    },
+  const searchParams = new URLSearchParams({
+    username: config.ib.username,
+    password: config.ib.password,
+    output_mode: 'json',
   });
 
-  const token = res.data;
+  let res = await fetch(IB + '/api_login.php?' + searchParams.toString(), {
+    method: 'POST',
+    headers: {},
+  });
+
+  const token = res.body ? await res.json() : null;
   let dupCount = maxDupCount;
   let submissionList;
 
